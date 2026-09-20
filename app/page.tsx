@@ -48,18 +48,18 @@ export default function HomePage() {
           {/* WIDE CINEMATIC HERO BANNER (Full Panoramic Photo + Right Edge Preserved) */}
           {/* ========================================================================= */}
           <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-gold-500/30 mild-gold-box-glow min-h-[460px] sm:min-h-[480px] lg:min-h-[500px] flex items-center bg-obsidian-950">
-            {/* Full panoramic background photo spanning edge-to-edge, anchored to right edge so the floral arch & neon are never cut off */}
+            {/* Full panoramic background photo: object-left on mobile (shows warm bokeh & leaves neon off-screen), object-right on desktop (shows complete arch & neon) */}
             <div className="absolute inset-0 w-full h-full overflow-hidden">
               <img
                 src={settings.heroBannerImage || "/images/hero-banner-full.png"}
                 alt="Crafting Unforgettable Surprises & Celebrations in Chennai"
-                className="w-full h-full object-cover object-right select-none pointer-events-none brightness-[0.98] contrast-[1.05]"
+                className="w-full h-full object-cover object-left md:object-right select-none pointer-events-none brightness-[0.98] contrast-[1.05]"
                 loading="eager"
               />
             </div>
 
-            {/* Dark gradient overlay: deep fade on left behind text, transitions to completely transparent on right so floral arch & neon sign shine clearly */}
-            <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/95 via-obsidian-950/80 to-obsidian-950/30 md:bg-gradient-to-r md:from-obsidian-950 md:via-obsidian-950/90 md:via-46% md:to-transparent z-10 pointer-events-none"></div>
+            {/* Dark gradient overlay: slowly fading black effect from the left side behind text */}
+            <div className="absolute inset-0 bg-gradient-to-r from-obsidian-950/95 via-obsidian-950/75 via-65% to-transparent md:from-obsidian-950 md:via-obsidian-950/90 md:via-46% md:to-transparent z-10 pointer-events-none"></div>
 
             {/* Left-Aligned Headline and Actions (Constrained to 48% width on desktop so it never overlaps the arch or neon) */}
             <div className="relative z-20 p-6 sm:p-8 md:p-10 lg:p-12 w-full md:max-w-[52%] lg:max-w-[48%] text-left">
