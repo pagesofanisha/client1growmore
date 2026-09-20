@@ -45,27 +45,25 @@ export default function HomePage() {
           </div>
 
           {/* ========================================================================= */}
-          {/* WIDE CINEMATIC HERO BANNER (Left Text + Right Glowing Decor Arch) */}
+          {/* WIDE CINEMATIC HERO BANNER (Full Panoramic Photo + Right Edge Preserved) */}
           {/* ========================================================================= */}
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-gold-500/30 mild-gold-box-glow min-h-[450px] sm:min-h-[500px] lg:min-h-[540px] flex items-center bg-obsidian-950">
-            {/* Right side decor image (Better Together floral arch with glowing neon & candles) */}
-            <div className="absolute right-0 top-0 bottom-0 w-full md:w-3/5 lg:w-7/12 overflow-hidden">
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-gold-500/30 mild-gold-box-glow min-h-[460px] sm:min-h-[480px] lg:min-h-[500px] flex items-center bg-obsidian-950">
+            {/* Full panoramic background photo spanning edge-to-edge, anchored to right edge so the floral arch & neon are never cut off */}
+            <div className="absolute inset-0 w-full h-full overflow-hidden">
               <img
-                src={settings.heroBannerImage || "/images/better-together-arch.png"}
-                alt="Crafting Unforgettable Surprises & Celebrations"
-                className="w-full h-full object-cover object-center brightness-[0.95] contrast-[1.05]"
+                src={settings.heroBannerImage || "/images/hero-banner-full.png"}
+                alt="Crafting Unforgettable Surprises & Celebrations in Chennai"
+                className="w-full h-full object-cover object-right select-none pointer-events-none brightness-[0.98] contrast-[1.05]"
                 loading="eager"
               />
-              {/* Soft horizontal gradient fade into dark left background */}
-              <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-obsidian-950 via-obsidian-950/60 to-transparent"></div>
             </div>
 
-            {/* Dark gradient overlay for text readability on all devices */}
-            <div className="absolute inset-0 bg-gradient-to-r from-obsidian-950 via-obsidian-950/95 to-obsidian-950/50 md:to-transparent z-10 pointer-events-none"></div>
+            {/* Dark gradient overlay: deep fade on left behind text, transitions to completely transparent on right so floral arch & neon sign shine clearly */}
+            <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/95 via-obsidian-950/80 to-obsidian-950/30 md:bg-gradient-to-r md:from-obsidian-950 md:via-obsidian-950/90 md:via-46% md:to-transparent z-10 pointer-events-none"></div>
 
-            {/* Left-Aligned Headline and Actions */}
-            <div className="relative z-20 p-6 sm:p-10 lg:p-14 max-w-2xl text-left">
-              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-extrabold text-white tracking-wider uppercase leading-[1.14] text-luxury-shadow">
+            {/* Left-Aligned Headline and Actions (Constrained to 48% width on desktop so it never overlaps the arch or neon) */}
+            <div className="relative z-20 p-6 sm:p-8 md:p-10 lg:p-12 w-full md:max-w-[52%] lg:max-w-[48%] text-left">
+              <h1 className="font-serif text-2xl sm:text-3xl md:text-3xl lg:text-4xl xl:text-[2.65rem] font-extrabold text-white tracking-wider uppercase leading-[1.15] text-luxury-shadow">
                 CRAFTING <br />
                 UNFORGETTABLE <br />
                 <span
@@ -81,28 +79,28 @@ export default function HomePage() {
                 IN CHENNAI
               </h1>
 
-              <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base text-slate-300 max-w-lg leading-relaxed font-normal text-luxury-shadow">
+              <p className="mt-3.5 sm:mt-4 text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed font-normal text-luxury-shadow">
                 From milestone 60th birthdays and fairytale marriage proposals to parents' 30th anniversary celebrations. We create breathtaking balloon decor, custom neon backdrops, and intimate moments with complete peace of mind.
               </p>
 
               {/* Action Buttons Side-by-Side */}
-              <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="mt-5 sm:mt-7 flex flex-wrap items-center gap-2.5 sm:gap-3.5">
                 <a
                   href={directWhatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95"
                 >
-                  <MessageCircle className="w-4 h-4 fill-white text-white" />
+                  <MessageCircle className="w-4 h-4 fill-white text-white shrink-0" />
                   <span>MESSAGE ON WHATSAPP</span>
                 </a>
 
                 <a
                   href="#events"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-obsidian-950/80 hover:bg-slate-900 text-gold-300 font-bold text-xs uppercase tracking-wider border border-gold-500/40 hover:border-gold-300 transition-all hover:scale-105 active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-5 py-3 rounded-full bg-obsidian-950/80 hover:bg-slate-900 text-gold-300 font-bold text-xs uppercase tracking-wider border border-gold-500/40 hover:border-gold-300 transition-all hover:scale-105 active:scale-95"
                 >
                   <span>EXPLORE EVENT BOXES</span>
-                  <ChevronRight className="w-3.5 h-3.5 text-gold-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-gold-400 shrink-0" />
                 </a>
               </div>
             </div>
