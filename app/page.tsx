@@ -19,18 +19,15 @@ export default function HomePage() {
   return (
     <div className="relative">
       {/* ========================================================================= */}
-      {/* 1. HERO SECTION WITH IMAGE BOX BEHIND HEADLINE TEXT */}
+      {/* 1. HERO SECTION - SPLIT CINEMATIC BANNER (Matching Reference Layout) */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-16 sm:py-20 lg:py-24">
-        {/* Background Atmosphere & Mild Gold Ambient Glow */}
-        <div className="absolute inset-0 bg-obsidian-950 z-0"></div>
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[30rem] sm:w-[45rem] h-[30rem] sm:h-[45rem] bg-gold-500/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
-        <div className="absolute bottom-10 left-10 w-72 h-72 bg-gold-600/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
+      <section className="relative overflow-hidden pt-8 pb-12 sm:pt-10 sm:pb-16 bg-obsidian-950">
+        {/* Background Atmosphere & Ambient Radiant Glow */}
+        <div className="absolute top-1/4 left-1/3 w-[30rem] sm:w-[45rem] h-[30rem] sm:h-[45rem] bg-gold-500/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
 
-        {/* Hero Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 text-center w-full">
-          {/* Top Trust Badges (Fluid & Responsive on Phone & Laptop) */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 mb-5 sm:mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+          {/* Top Trust Badges (Centered above banner) */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
             <div className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-obsidian-900/90 border border-gold-500/40 text-gold-300 text-[11px] sm:text-xs font-semibold shadow-lg backdrop-blur-md">
               <Star className="w-3.5 h-3.5 fill-gold-400 text-gold-400 shrink-0" />
               <span>4.9 ★ Rating (93 Google Reviews)</span>
@@ -48,77 +45,66 @@ export default function HomePage() {
           </div>
 
           {/* ========================================================================= */}
-          {/* HEADLINE IMAGE BOX - Photo ONLY directly behind this text! */}
-          {/* Editable from backend (/admin) */}
+          {/* WIDE CINEMATIC HERO BANNER (Left Text + Right Glowing Decor Arch) */}
           {/* ========================================================================= */}
-          <div className="relative mx-auto max-w-5xl rounded-2xl sm:rounded-3xl overflow-hidden p-6 sm:p-10 lg:p-14 mild-gold-box-glow my-4 sm:my-6 transition-all duration-300">
-            {/* The Image Box Background Photo */}
-            <img
-              src={settings.heroBannerImage || "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85"}
-              alt="Crafting Unforgettable Surprises & Celebrations"
-              className="absolute inset-0 w-full h-full object-cover object-center brightness-[0.7] contrast-[1.05]"
-              loading="eager"
-            />
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-gold-500/30 mild-gold-box-glow min-h-[450px] sm:min-h-[500px] lg:min-h-[540px] flex items-center bg-obsidian-950">
+            {/* Right side decor image (Better Together floral arch with glowing neon & candles) */}
+            <div className="absolute right-0 top-0 bottom-0 w-full md:w-3/5 lg:w-7/12 overflow-hidden">
+              <img
+                src={settings.heroBannerImage || "/images/better-together-arch.png"}
+                alt="Crafting Unforgettable Surprises & Celebrations"
+                className="w-full h-full object-cover object-center brightness-[0.95] contrast-[1.05]"
+                loading="eager"
+              />
+              {/* Soft horizontal gradient fade into dark left background */}
+              <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-obsidian-950 via-obsidian-950/60 to-transparent"></div>
+            </div>
 
-            {/* Dark luxury overlay with mild gold glow */}
-            <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/95 via-obsidian-950/80 to-obsidian-950/90 z-10"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(212,175,55,0.18)_0%,_transparent_75%)] z-10 pointer-events-none"></div>
+            {/* Dark gradient overlay for text readability on all devices */}
+            <div className="absolute inset-0 bg-gradient-to-r from-obsidian-950 via-obsidian-950/95 to-obsidian-950/50 md:to-transparent z-10 pointer-events-none"></div>
 
-            {/* Text Content Inside The Image Box */}
-            <div className="relative z-20">
-              <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.15] max-w-4xl mx-auto text-luxury-shadow">
-                Crafting Unforgettable <br className="hidden sm:inline" />
+            {/* Left-Aligned Headline and Actions */}
+            <div className="relative z-20 p-6 sm:p-10 lg:p-14 max-w-2xl text-left">
+              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-extrabold text-white tracking-wider uppercase leading-[1.14] text-luxury-shadow">
+                CRAFTING <br />
+                UNFORGETTABLE <br />
                 <span
-                  className="font-bold inline-block"
+                  className="font-extrabold inline-block"
                   style={{
                     color: settings.headlineHighlightColor || '#D4AF37',
                     textShadow: `0 0 18px ${settings.headlineHighlightColor || '#D4AF37'}88, 0 0 35px ${settings.headlineHighlightColor || '#D4AF37'}44`,
                   }}
                 >
-                  Surprises & Celebrations
+                  SURPRISES & <br />
+                  CELEBRATIONS
                 </span> <br />
-                in Chennai
+                IN CHENNAI
               </h1>
 
-              <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-xl text-slate-200 max-w-3xl mx-auto leading-relaxed font-normal text-luxury-shadow">
+              <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base text-slate-300 max-w-lg leading-relaxed font-normal text-luxury-shadow">
                 From milestone 60th birthdays and fairytale marriage proposals to parents' 30th anniversary celebrations. We create breathtaking balloon decor, custom neon backdrops, and intimate moments with complete peace of mind.
               </p>
-            </div>
-          </div>
 
-          {/* Call to Actions - Stack on Mobile, Row on Laptop */}
-          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 max-w-md mx-auto w-full px-2 sm:px-0">
-            <a
-              href={directWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 via-green-600 to-emerald-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-emerald-700/40 hover:scale-105 active:scale-95 transition-all"
-            >
-              <MessageCircle className="w-5 h-5 fill-white shrink-0" />
-              <span>Message on WhatsApp</span>
-            </a>
+              {/* Action Buttons Side-by-Side */}
+              <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+                <a
+                  href={directWhatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white text-white" />
+                  <span>MESSAGE ON WHATSAPP</span>
+                </a>
 
-            <a
-              href="#events"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-obsidian-900/90 hover:bg-slate-800 text-gold-300 font-bold text-xs sm:text-sm tracking-wider uppercase border border-gold-500/40 hover:border-gold-300 shadow-lg backdrop-blur-md active:scale-95 transition-all"
-            >
-              <span>Explore Event Boxes</span>
-              <ChevronRight className="w-4 h-4 shrink-0" />
-            </a>
-          </div>
-
-          {/* Real Customer Quote Teaser */}
-          <div className="mt-8 sm:mt-10 max-w-2xl mx-auto p-4 sm:p-4.5 rounded-2xl bg-obsidian-900/80 border border-gold-500/30 backdrop-blur-md flex items-center gap-3.5 sm:gap-4 text-left shadow-xl">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gold-500/20 border border-gold-500/40 flex items-center justify-center shrink-0">
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-gold-400 fill-gold-400" />
-            </div>
-            <div>
-              <p className="text-xs sm:text-xs text-slate-200 italic leading-snug">
-                "It was my parents 30th Wedding Anniversary surprise ♥️ Seriously everyone was amazed by seeing the decorations and the work done by growmore event planners..."
-              </p>
-              <span className="text-[10px] sm:text-[11px] text-gold-400 font-semibold mt-1 block">
-                — Verified Chennai Client on Google (5.0 ★)
-              </span>
+                <a
+                  href="#events"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-obsidian-950/80 hover:bg-slate-900 text-gold-300 font-bold text-xs uppercase tracking-wider border border-gold-500/40 hover:border-gold-300 transition-all hover:scale-105 active:scale-95"
+                >
+                  <span>EXPLORE EVENT BOXES</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-gold-400" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -127,17 +113,25 @@ export default function HomePage() {
       {/* ========================================================================= */}
       {/* 2. EVENT BOXES SHOWCASE (The requested feature!) */}
       {/* ========================================================================= */}
-      <section id="events" className="py-20 bg-obsidian-950 relative">
+      <section id="events" className="py-16 sm:py-20 bg-obsidian-950 relative border-t border-gold-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
+          {/* Section Header Matching Mockup */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl text-left">
               <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-gold-400 font-bold mb-2">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Our Signature Event Collections</span>
               </div>
-              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                Select An Event Box To <span className="gold-gradient-text">Explore Gallery</span>
+              <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight uppercase leading-tight">
+                Select An Event Box To <br />
+                <span
+                  style={{
+                    color: settings.headlineHighlightColor || '#D4AF37',
+                    textShadow: `0 0 16px ${settings.headlineHighlightColor || '#D4AF37'}88`,
+                  }}
+                >
+                  Explore Gallery
+                </span>
               </h2>
               <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
                 Click on any event box below to view high-resolution photo galleries of past real setups, package inclusions, and direct WhatsApp inquiry options.
@@ -152,7 +146,7 @@ export default function HomePage() {
                 href={directWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-emerald-600 text-xs font-bold transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-emerald-600 text-xs font-bold transition-all"
               >
                 <MessageCircle className="w-4 h-4 fill-current" />
                 <span>Chat with Planner</span>

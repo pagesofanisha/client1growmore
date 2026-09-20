@@ -72,7 +72,7 @@ const DEFAULT_SETTINGS: BusinessSettings = {
   totalReviews: 93,
   adminPin: "growmore2026",
   welcomeMessage: "Hi Grow More Team! I visited your website and would like to plan a surprise event.",
-  heroBannerImage: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=85",
+  heroBannerImage: "/images/better-together-arch.png",
   headlineHighlightColor: "#D4AF37",
   passwordUpdatedAt: new Date().toISOString()
 };
