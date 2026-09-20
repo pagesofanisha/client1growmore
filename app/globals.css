@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #07090e;
+  --foreground: #f8fafc;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .font-serif {
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+/* Luxury gold text clip */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF0B8 0%, #D4AF37 50%, #AA8022 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Premium-Looking Metallic Gold Gradient */
+.premium-gold-text {
+  background: linear-gradient(135deg, #FFF8DB 0%, #F5DE88 28%, #D4AF37 60%, #B89228 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Mild Gold Glow Effect from behind the text */
+.mild-gold-glow {
+  filter: drop-shadow(0 0 14px rgba(212, 175, 55, 0.45)) drop-shadow(0 0 28px rgba(212, 175, 55, 0.25));
+}
+
+/* Mild Gold Glow around the box */
+.mild-gold-box-glow {
+  box-shadow: 0 0 45px -5px rgba(212, 175, 55, 0.25), 0 0 80px -15px rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.gold-gradient-bg {
+  background: linear-gradient(135deg, #D4AF37 0%, #B89228 100%);
+}
+
+.gold-border {
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.gold-border-glow:hover {
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 0 25px -5px rgba(212, 175, 55, 0.25);
+}
+
+.glass-card {
+  background: rgba(16, 22, 37, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card:hover {
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+/* Pulsing effect for WhatsApp button */
+@keyframes pulse-gold {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 14px rgba(37, 211, 102, 0);
+  }
+}
+
+.pulse-whatsapp {
+  animation: pulse-gold 2.5s infinite;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080B11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #23304E;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Ken Burns slow cinematic movement for background photo */
+@keyframes kenburns {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-kenburns {
+  animation: kenburns 25s ease-in-out infinite alternate;
+}
+
+/* Premium text shadow for crystal readability over photo backdrops */
+.text-luxury-shadow {
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8), 0 4px 40px rgba(0, 0, 0, 0.9);
+}
