@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getInquiries, saveInquiry, getSettings } from '@/lib/storage';
 import { buildWhatsAppMessage, generateWhatsAppLink } from '@/lib/whatsapp';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const inquiries = getInquiries();

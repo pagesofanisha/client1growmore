@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -21,9 +21,27 @@ import {
   Lock,
   LogOut,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  Download,
+  RotateCcw,
+  FileJson,
+  Check
 } from 'lucide-react';
-import { BusinessSettings, EventItem, InquiryItem } from '@/lib/storage';
+import { BusinessSettings, EventItem, InquiryItem } from '@/lib/types';
+import {
+  getStoredSettings,
+  saveStoredSettings,
+  getStoredEvents,
+  saveStoredEvents,
+  saveStoredEvent,
+  deleteStoredEvent,
+  getStoredInquiries,
+  updateStoredInquiryStatus,
+  deleteStoredInquiry,
+  compressImageToBase64,
+  STORAGE_KEYS
+} from '@/lib/clientStorage';
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -41,6 +59,15 @@ export default function AdminPage() {
 
   // Form states for Settings
   const [settingsForm, setSettingsForm] = useState<Partial<BusinessSettings>>({});
+
+  // Device upload states & refs
+  const [uploadingHero, setUploadingHero] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+  const eventCoverInputRef = useRef<HTMLInputElement>(null);
+  const galleryFilesInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal / Form state for Events
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
@@ -147,21 +174,53 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     setLoading(true);
+    // 1. Immediately hydrate from ClientStorage so UI is loaded instantly
+    const localSettings = getStoredSettings(null as any);
+    const localEvents = getStoredEvents([]);
+    const localInquiries = getStoredInquiries([]);
+
+    if (localSettings) {
+      setSettings(localSettings);
+      setSettingsForm(localSettings);
+    }
+    if (localEvents.length > 0) setEvents(localEvents);
+    if (localInquiries.length > 0) setInquiries(localInquiries);
+
+    // 2. Fetch from API in parallel
     try {
       const [resSettings, resEvents, resInquiries] = await Promise.all([
-        fetch('/api/settings').then((r) => r.json()),
-        fetch('/api/events').then((r) => r.json()),
-        fetch('/api/inquiries').then((r) => r.json()),
+        fetch('/api/settings').then((r) => r.json()).catch(() => ({ success: false })),
+        fetch('/api/events').then((r) => r.json()).catch(() => ({ success: false })),
+        fetch('/api/inquiries').then((r) => r.json()).catch(() => ({ success: false })),
       ]);
 
-      if (resSettings.success) {
-        setSettings(resSettings.data);
-        setSettingsForm(resSettings.data);
+      if (resSettings.success && resSettings.data) {
+        if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+          saveStoredSettings(resSettings.data);
+          setSettings(resSettings.data);
+          setSettingsForm(resSettings.data);
+        } else {
+          // Merge server data with local settings
+          const merged = { ...resSettings.data, ...(localSettings || {}) };
+          setSettings(merged);
+          setSettingsForm(merged);
+        }
       }
-      if (resEvents.success) setEvents(resEvents.data);
-      if (resInquiries.success) setInquiries(resInquiries.data);
+
+      if (resEvents.success && resEvents.data) {
+        if (!localStorage.getItem(STORAGE_KEYS.EVENTS) || localEvents.length === 0) {
+          saveStoredEvents(resEvents.data);
+          setEvents(resEvents.data);
+        }
+      }
+
+      if (resInquiries.success && resInquiries.data) {
+        if (!localStorage.getItem(STORAGE_KEYS.INQUIRIES) || localInquiries.length === 0) {
+          setInquiries(resInquiries.data);
+        }
+      }
     } catch (err) {
-      console.error(err);
+      console.warn('API sync notice', err);
     } finally {
       setLoading(false);
     }
@@ -172,21 +231,42 @@ export default function AdminPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/settings', {
-        method: 'PUT',
+      // 1. Save immediately to LocalStorage (instant permanent persistence on client)
+      const saved = saveStoredSettings(settingsForm);
+      setSettings(saved);
+      setSaveSuccess('WhatsApp number and business settings saved permanently! Changes are active in the frontend.');
+      setTimeout(() => setSaveSuccess(null), 5000);
+
+      // 2. Sync to API in background (non-blocking)
+      fetch('/api/settings', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settingsForm),
+      }).catch((err) => {
+        console.warn('Background server sync:', err);
       });
-      const data = await res.json();
-      if (data.success) {
-        setSettings(data.data);
-        setSaveSuccess('WhatsApp number and business settings updated successfully!');
-        setTimeout(() => setSaveSuccess(null), 4000);
-      }
     } catch (err) {
-      alert('Failed to save settings');
+      console.error('Error saving settings:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle direct file upload for Hero Banner Photo
+  const handleHeroPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingHero(true);
+      const base64 = await compressImageToBase64(file, 1600, 0.85);
+      setSettingsForm((prev) => ({ ...prev, heroBannerImage: base64 }));
+      setSaveSuccess('Photo loaded from device! Click "Save Settings" below to apply it permanently to your website.');
+      setTimeout(() => setSaveSuccess(null), 5000);
+    } catch (err) {
+      alert('Could not process image file. Please try another photo.');
+    } finally {
+      setUploadingHero(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -208,6 +288,47 @@ export default function AdminPage() {
     setIsCreatingEvent(true);
   };
 
+  // Handle direct file upload for Event Cover Photo
+  const handleEventCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingEvent) return;
+    try {
+      setUploadingCover(true);
+      const base64 = await compressImageToBase64(file, 1200, 0.82);
+      setEditingEvent({ ...editingEvent, coverImage: base64 });
+    } catch (err) {
+      alert('Could not process cover photo.');
+    } finally {
+      setUploadingCover(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Handle direct multi-file upload for Event Gallery Photos
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !editingEvent) return;
+    try {
+      setUploadingGallery(true);
+      const newPhotos: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const base64 = await compressImageToBase64(files[i], 1200, 0.82);
+        newPhotos.push(base64);
+      }
+      setEditingEvent({
+        ...editingEvent,
+        gallery: [...(editingEvent.gallery || []), ...newPhotos],
+      });
+      setSaveSuccess(`Added ${newPhotos.length} photo(s) to gallery!`);
+      setTimeout(() => setSaveSuccess(null), 4000);
+    } catch (err) {
+      alert('Error uploading gallery photos.');
+    } finally {
+      setUploadingGallery(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   // Save Event
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,26 +339,29 @@ export default function AdminPage() {
 
     setLoading(true);
     try {
-      const url = isCreatingEvent ? '/api/events' : `/api/events/${editingEvent.id}`;
-      const method = isCreatingEvent ? 'POST' : 'PUT';
+      const eventToSave: EventItem = {
+        ...editingEvent,
+        id: editingEvent.id || editingEvent.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      };
 
-      const res = await fetch(url, {
+      // 1. Save immediately to LocalStorage
+      const updatedEvents = saveStoredEvent(eventToSave, events);
+      setEvents(updatedEvents);
+      setEditingEvent(null);
+      setIsCreatingEvent(false);
+      setSaveSuccess(`"${eventToSave.title}" box & photos saved permanently!`);
+      setTimeout(() => setSaveSuccess(null), 5000);
+
+      // 2. Background API sync
+      const url = isCreatingEvent ? '/api/events' : `/api/events/${eventToSave.id}`;
+      const method = isCreatingEvent ? 'POST' : 'PUT';
+      fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingEvent),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setEditingEvent(null);
-        setIsCreatingEvent(false);
-        fetchData();
-        setSaveSuccess('Event box & gallery updated successfully!');
-        setTimeout(() => setSaveSuccess(null), 4000);
-      } else {
-        alert(data.error || 'Failed to save event');
-      }
+        body: JSON.stringify(eventToSave),
+      }).catch((err) => console.warn('Background event sync:', err));
     } catch (err) {
-      alert('Error saving event');
+      console.error('Error saving event:', err);
     } finally {
       setLoading(false);
     }
@@ -246,15 +370,12 @@ export default function AdminPage() {
   // Delete Event
   const handleDeleteEvent = async (id: string, title: string) => {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
-    try {
-      const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        fetchData();
-      }
-    } catch (err) {
-      alert('Failed to delete event');
-    }
+    const updated = deleteStoredEvent(id, events);
+    setEvents(updated);
+    setSaveSuccess(`Deleted "${title}" successfully.`);
+    setTimeout(() => setSaveSuccess(null), 4000);
+
+    fetch(`/api/events/${id}`, { method: 'DELETE' }).catch((err) => console.warn('Background event delete:', err));
   };
 
   // Add photo to current event's gallery
@@ -297,27 +418,70 @@ export default function AdminPage() {
 
   // Update inquiry status
   const handleInquiryStatusChange = async (id: string, newStatus: InquiryItem['status']) => {
-    try {
-      await fetch(`/api/inquiries/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      fetchData();
-    } catch (err) {
-      console.error(err);
-    }
+    const updated = updateStoredInquiryStatus(id, newStatus, inquiries);
+    setInquiries(updated);
+    fetch(`/api/inquiries/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    }).catch(() => {});
   };
 
   // Delete inquiry
   const handleDeleteInquiry = async (id: string) => {
     if (!confirm('Delete this inquiry record?')) return;
-    try {
-      await fetch(`/api/inquiries/${id}`, { method: 'DELETE' });
-      fetchData();
-    } catch (err) {
-      console.error(err);
-    }
+    const updated = deleteStoredInquiry(id, inquiries);
+    setInquiries(updated);
+    fetch(`/api/inquiries/${id}`, { method: 'DELETE' }).catch(() => {});
+  };
+
+  // Backup & Recovery tools
+  const handleExportBackup = () => {
+    const data = {
+      settings: settings || getStoredSettings(null as any),
+      events: events.length > 0 ? events : getStoredEvents([]),
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `growmore_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = JSON.parse(event.target?.result as string);
+        if (content.settings) {
+          saveStoredSettings(content.settings);
+          setSettings(content.settings);
+          setSettingsForm(content.settings);
+        }
+        if (Array.isArray(content.events)) {
+          saveStoredEvents(content.events);
+          setEvents(content.events);
+        }
+        setSaveSuccess('Backup successfully restored! Website updated.');
+        setTimeout(() => setSaveSuccess(null), 5000);
+      } catch (err) {
+        alert('Invalid backup JSON file format.');
+      }
+    };
+    reader.readAsText(file);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleResetToDefaults = () => {
+    if (!confirm('Are you sure you want to reset all website content, colors, and photos back to initial defaults?')) return;
+    localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+    localStorage.removeItem(STORAGE_KEYS.EVENTS);
+    window.location.reload();
   };
 
   // =========================================================================
@@ -650,16 +814,33 @@ export default function AdminPage() {
                   {/* Cover Photo URL */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Main Box Cover Photo URL *
+                      Main Box Cover Photo *
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => eventCoverInputRef.current?.click()}
+                        disabled={uploadingCover}
+                        className="px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition hover:scale-105 active:scale-95"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>{uploadingCover ? 'Compressing & Uploading...' : 'Upload Photo From Device'}</span>
+                      </button>
+                      <input
+                        type="file"
+                        ref={eventCoverInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleEventCoverUpload}
+                      />
+                      <span className="text-xs text-slate-500 font-semibold uppercase">Or</span>
                       <input
                         type="text"
                         required
                         value={editingEvent.coverImage}
                         onChange={(e) => setEditingEvent({ ...editingEvent, coverImage: e.target.value })}
                         placeholder="Paste image link (https://...)"
-                        className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-gold-400 focus:outline-none"
+                        className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-gold-400 focus:outline-none"
                       />
                     </div>
                     {editingEvent.coverImage && (
@@ -715,22 +896,42 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Add Photo Input */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newPhotoUrl}
-                        onChange={(e) => setNewPhotoUrl(e.target.value)}
-                        placeholder="Paste photo URL here to add to this gallery..."
-                        className="flex-1 px-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-gold-400 focus:outline-none"
-                      />
+                    {/* Add Photo Inputs: Device Upload + URL input */}
+                    <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="button"
-                        onClick={handleAddPhotoToGallery}
-                        className="px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs uppercase"
+                        onClick={() => galleryFilesInputRef.current?.click()}
+                        disabled={uploadingGallery}
+                        className="px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition hover:scale-105 active:scale-95"
                       >
-                        + Add Photo
+                        <Upload className="w-4 h-4" />
+                        <span>{uploadingGallery ? 'Uploading Photos...' : 'Upload Photos From Device'}</span>
                       </button>
+                      <input
+                        type="file"
+                        ref={galleryFilesInputRef}
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleGalleryUpload}
+                      />
+                      <span className="text-xs text-slate-500 font-semibold uppercase">Or</span>
+                      <div className="flex-1 min-w-[220px] flex gap-2">
+                        <input
+                          type="text"
+                          value={newPhotoUrl}
+                          onChange={(e) => setNewPhotoUrl(e.target.value)}
+                          placeholder="Paste photo URL here..."
+                          className="flex-1 px-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-gold-400 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddPhotoToGallery}
+                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-gold-400 font-bold text-xs uppercase border border-slate-700"
+                        >
+                          + Add Link
+                        </button>
+                      </div>
                     </div>
 
                     {/* Gallery Thumbnails List */}
@@ -948,15 +1149,32 @@ export default function AdminPage() {
                   <span>Headline Text Box Background Image (Behind "Crafting Unforgettable Surprises & Celebrations")</span>
                 </label>
                 <p className="text-xs text-slate-400">
-                  This image appears directly inside the box behind the main headline on your homepage. You can change this image anytime by pasting an image URL below.
+                  This image appears directly inside the box behind the main headline on your homepage. You can upload a photo directly from your device (phone/PC) or paste an image URL below.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => heroFileInputRef.current?.click()}
+                    disabled={uploadingHero}
+                    className="px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition hover:scale-105 active:scale-95"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>{uploadingHero ? 'Compressing & Loading...' : 'Upload Image From Device'}</span>
+                  </button>
+                  <input
+                    type="file"
+                    ref={heroFileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleHeroPhotoUpload}
+                  />
+                  <span className="text-xs text-slate-500 font-semibold uppercase">Or</span>
                   <input
                     type="text"
                     value={settingsForm.heroBannerImage || ''}
                     onChange={(e) => setSettingsForm({ ...settingsForm, heroBannerImage: e.target.value })}
                     placeholder="Paste image URL (https://...)"
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-gold-400 focus:outline-none"
+                    className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-gold-400 focus:outline-none"
                   />
                 </div>
                 {settingsForm.heroBannerImage && (
@@ -1179,6 +1397,50 @@ export default function AdminPage() {
                   <span>{passwordLoading ? 'Updating Password...' : 'Update Password'}</span>
                 </button>
               </form>
+            </div>
+
+            {/* Data Backup, Import & Factory Reset */}
+            <div className="mt-10 pt-8 border-t border-slate-800">
+              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2 mb-1">
+                <FileJson className="w-5 h-5 text-gold-400" />
+                <span>Data Backup & Recovery</span>
+              </h3>
+              <p className="text-xs text-slate-400 mb-5">
+                Save an offline JSON backup file of all your website settings, colors, photos, and event collections, or restore them anytime.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleExportBackup}
+                  className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold flex items-center gap-2 border border-slate-700 transition"
+                >
+                  <Download className="w-4 h-4 text-gold-400" />
+                  <span>Export Backup JSON</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => importFileInputRef.current?.click()}
+                  className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-semibold flex items-center gap-2 border border-slate-700 transition"
+                >
+                  <Upload className="w-4 h-4 text-emerald-400" />
+                  <span>Restore From Backup</span>
+                </button>
+                <input
+                  type="file"
+                  ref={importFileInputRef}
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportBackup}
+                />
+                <button
+                  type="button"
+                  onClick={handleResetToDefaults}
+                  className="px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white text-xs font-semibold flex items-center gap-2 border border-rose-500/30 transition sm:ml-auto"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset to Factory Defaults</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

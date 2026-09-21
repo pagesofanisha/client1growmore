@@ -1,13 +1,14 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Sparkles, Star, CheckCircle2, MessageCircle, Calendar, MapPin, Share2, Phone } from 'lucide-react';
-import { getEventById, getEvents, getSettings } from '@/lib/storage';
+import { EventItem, BusinessSettings, DEFAULT_SETTINGS, DEFAULT_EVENTS } from '@/lib/types';
+import { getStoredEvents, getStoredSettings, subscribeToStorageUpdates } from '@/lib/clientStorage';
 import EventGalleryLightbox from '@/components/EventGalleryLightbox';
 import InquiryForm from '@/components/InquiryForm';
 import EventCard from '@/components/EventCard';
-
-export const revalidate = 0; // Dynamic SSR
 
 interface EventPageProps {
   params: {
@@ -16,9 +17,59 @@ interface EventPageProps {
 }
 
 export default function EventDetailPage({ params }: EventPageProps) {
-  const event = getEventById(params.id);
-  const settings = getSettings();
-  const allEvents = getEvents();
+  const defaultEvent = DEFAULT_EVENTS.find(
+    (e) => e.id === params.id || e.id.toLowerCase() === params.id.toLowerCase()
+  ) || null;
+
+  const [event, setEvent] = useState<EventItem | null>(defaultEvent);
+  const [settings, setSettings] = useState<BusinessSettings>(DEFAULT_SETTINGS);
+  const [allEvents, setAllEvents] = useState<EventItem[]>(DEFAULT_EVENTS);
+
+  useEffect(() => {
+    // Hydrate from ClientStorage
+    const storedEvents = getStoredEvents(DEFAULT_EVENTS);
+    const storedSettings = getStoredSettings(DEFAULT_SETTINGS);
+    setSettings(storedSettings);
+    setAllEvents(storedEvents);
+
+    const found = storedEvents.find(
+      (e) => e.id === params.id || e.id.toLowerCase() === params.id.toLowerCase()
+    );
+    if (found) {
+      setEvent(found);
+    }
+
+    // Also fetch from API in background
+    fetch('/api/events')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          const mergedEvents = getStoredEvents(res.data);
+          setAllEvents(mergedEvents);
+          const apiFound = mergedEvents.find(
+            (e: EventItem) => e.id === params.id || e.id.toLowerCase() === params.id.toLowerCase()
+          );
+          if (apiFound) setEvent(apiFound);
+        }
+      })
+      .catch(() => {});
+
+    // Subscribe to live updates from admin
+    const unsubscribe = subscribeToStorageUpdates(() => {
+      const liveEvents = getStoredEvents(DEFAULT_EVENTS);
+      const liveSettings = getStoredSettings(DEFAULT_SETTINGS);
+      setSettings(liveSettings);
+      setAllEvents(liveEvents);
+      const liveFound = liveEvents.find(
+        (e) => e.id === params.id || e.id.toLowerCase() === params.id.toLowerCase()
+      );
+      if (liveFound) {
+        setEvent(liveFound);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [params.id]);
 
   if (!event) {
     notFound();
@@ -133,7 +184,7 @@ export default function EventDetailPage({ params }: EventPageProps) {
         </div>
 
         {/* ========================================================================= */}
-        {/* PHOTO GALLERY SECTION ("picture, picture in that event gallery") */}
+        {/* PHOTO GALLERY SECTION */}
         {/* ========================================================================= */}
         <div className="mb-16">
           <div className="flex items-center justify-between mb-6">

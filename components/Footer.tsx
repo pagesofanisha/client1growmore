@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MapPin, Phone, Clock, MessageCircle, Sparkles, Star, ExternalLink, Shield } from 'lucide-react';
+import { getStoredSettings, subscribeToStorageUpdates } from '@/lib/clientStorage';
 
 export default function Footer() {
   const [settings, setSettings] = useState({
@@ -17,14 +18,28 @@ export default function Footer() {
   });
 
   useEffect(() => {
+    // 1. Initial hydration from client storage
+    const stored = getStoredSettings(settings as any);
+    setSettings((prev) => ({ ...prev, ...stored }));
+
+    // 2. Fetch live settings
     fetch('/api/settings')
       .then((res) => res.json())
       .then((res) => {
         if (res.success && res.data) {
-          setSettings((prev) => ({ ...prev, ...res.data }));
+          const fresh = getStoredSettings(res.data);
+          setSettings((prev) => ({ ...prev, ...fresh }));
         }
       })
       .catch(() => {});
+
+    // 3. Listen to live updates from admin
+    const unsubscribe = subscribeToStorageUpdates(() => {
+      const updated = getStoredSettings(settings as any);
+      setSettings((prev) => ({ ...prev, ...updated }));
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(

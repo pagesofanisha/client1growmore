@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSettings, saveSettings } from '@/lib/storage';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const settings = getSettings();
@@ -10,7 +13,7 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+async function handleUpdate(request: Request) {
   try {
     const body = await request.json();
     const updated = saveSettings(body);
@@ -18,4 +21,12 @@ export async function PUT(request: Request) {
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
+}
+
+export async function PUT(request: Request) {
+  return handleUpdate(request);
+}
+
+export async function POST(request: Request) {
+  return handleUpdate(request);
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getEvents, saveEvent, EventItem } from '@/lib/storage';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const events = getEvents();

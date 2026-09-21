@@ -1,16 +1,55 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Sparkles, Star, MapPin, Clock, MessageCircle, Heart, ArrowRight, CheckCircle2, ShieldCheck, ChevronRight } from 'lucide-react';
-import { getEvents, getSettings } from '@/lib/storage';
+import { BusinessSettings, EventItem, DEFAULT_SETTINGS, DEFAULT_EVENTS } from '@/lib/types';
+import { getStoredEvents, getStoredSettings, subscribeToStorageUpdates } from '@/lib/clientStorage';
 import EventCard from '@/components/EventCard';
 import InquiryForm from '@/components/InquiryForm';
 import TestimonialsSection from '@/components/TestimonialsSection';
 
-export const revalidate = 0; // Dynamic SSR to always fetch latest events and settings
-
 export default function HomePage() {
-  const events = getEvents();
-  const settings = getSettings();
+  const [settings, setSettings] = useState<BusinessSettings>(DEFAULT_SETTINGS);
+  const [events, setEvents] = useState<EventItem[]>(DEFAULT_EVENTS);
+
+  // Hydrate from ClientStorage on mount & subscribe to real-time updates from /admin
+  useEffect(() => {
+    // 1. Initial hydration from client storage
+    const currentStoredSettings = getStoredSettings(settings);
+    const currentStoredEvents = getStoredEvents(events);
+    setSettings(currentStoredSettings);
+    setEvents(currentStoredEvents);
+
+    // 2. Also fetch latest from API in background
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          const merged = getStoredSettings(res.data);
+          setSettings(merged);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/events')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          const merged = getStoredEvents(res.data);
+          setEvents(merged);
+        }
+      })
+      .catch(() => {});
+
+    // 3. Listen to cross-tab & same-tab updates from admin panel
+    const unsubscribe = subscribeToStorageUpdates(() => {
+      setSettings(getStoredSettings(settings));
+      setEvents(getStoredEvents(events));
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const directWhatsAppUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
     'Hi Grow More Team! I want to plan a special celebration in Chennai.'
@@ -48,7 +87,7 @@ export default function HomePage() {
           {/* WIDE CINEMATIC HERO BANNER (Full Panoramic Photo + Right Edge Preserved) */}
           {/* ========================================================================= */}
           <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-gold-500/30 mild-gold-box-glow min-h-[460px] sm:min-h-[480px] lg:min-h-[500px] flex items-center bg-obsidian-950">
-            {/* Full panoramic background photo: object-left on mobile (shows warm bokeh & leaves neon off-screen), object-right on desktop (shows complete arch & neon) */}
+            {/* Full panoramic background photo: object-left on mobile, object-right on desktop */}
             <div className="absolute inset-0 w-full h-full overflow-hidden">
               <img
                 src={settings.heroBannerImage || "/images/hero-banner-full.png"}
@@ -61,13 +100,13 @@ export default function HomePage() {
             {/* Dark gradient overlay: slowly fading black effect from the left side behind text */}
             <div className="absolute inset-0 bg-gradient-to-r from-obsidian-950/95 via-obsidian-950/75 via-65% to-transparent md:from-obsidian-950 md:via-obsidian-950/90 md:via-46% md:to-transparent z-10 pointer-events-none"></div>
 
-            {/* Left-Aligned Headline and Actions (Constrained to 48% width on desktop so it never overlaps the arch or neon) */}
+            {/* Left-Aligned Headline and Actions */}
             <div className="relative z-20 p-6 sm:p-8 md:p-10 lg:p-12 w-full md:max-w-[52%] lg:max-w-[48%] text-left">
               <h1 className="font-serif text-2xl sm:text-3xl md:text-3xl lg:text-4xl xl:text-[2.65rem] font-extrabold text-white tracking-wider uppercase leading-[1.15] text-luxury-shadow">
                 CRAFTING <br />
                 UNFORGETTABLE <br />
                 <span
-                  className="font-extrabold inline-block"
+                  className="font-extrabold inline-block transition-colors duration-200"
                   style={{
                     color: settings.headlineHighlightColor || '#D4AF37',
                     textShadow: `0 0 18px ${settings.headlineHighlightColor || '#D4AF37'}88, 0 0 35px ${settings.headlineHighlightColor || '#D4AF37'}44`,
@@ -109,11 +148,11 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 2. EVENT BOXES SHOWCASE (The requested feature!) */}
+      {/* 2. EVENT BOXES SHOWCASE */}
       {/* ========================================================================= */}
       <section id="events" className="py-16 sm:py-20 bg-obsidian-950 relative border-t border-gold-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header Matching Mockup */}
+          {/* Section Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="max-w-2xl text-left">
               <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-gold-400 font-bold mb-2">

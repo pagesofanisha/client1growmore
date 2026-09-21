@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Sparkles, Phone, MessageCircle, Menu, X, ShieldCheck, MapPin } from 'lucide-react';
+import { getStoredSettings, subscribeToStorageUpdates } from '@/lib/clientStorage';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,18 +17,40 @@ export default function Navbar() {
     };
     window.addEventListener('scroll', handleScroll);
 
-    // Fetch live business settings
+    // 1. Initial hydration from client storage
+    const stored = getStoredSettings({
+      whatsappNumber: '917200212745',
+      displayPhone: '072002 12745',
+    } as any);
+    if (stored.whatsappNumber) setWhatsappNumber(stored.whatsappNumber);
+    if (stored.displayPhone) setDisplayPhone(stored.displayPhone);
+
+    // 2. Fetch live business settings from API in background
     fetch('/api/settings')
       .then((res) => res.json())
       .then((res) => {
         if (res.success && res.data) {
-          if (res.data.whatsappNumber) setWhatsappNumber(res.data.whatsappNumber);
-          if (res.data.displayPhone) setDisplayPhone(res.data.displayPhone);
+          const fresh = getStoredSettings(res.data);
+          if (fresh.whatsappNumber) setWhatsappNumber(fresh.whatsappNumber);
+          if (fresh.displayPhone) setDisplayPhone(fresh.displayPhone);
         }
       })
       .catch(() => {});
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    // 3. Listen for live updates from admin
+    const unsubscribe = subscribeToStorageUpdates(() => {
+      const updated = getStoredSettings({
+        whatsappNumber: '917200212745',
+        displayPhone: '072002 12745',
+      } as any);
+      if (updated.whatsappNumber) setWhatsappNumber(updated.whatsappNumber);
+      if (updated.displayPhone) setDisplayPhone(updated.displayPhone);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      unsubscribe();
+    };
   }, []);
 
   const whatsappDirectUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hi Grow More team! I visited your website and would like to plan a surprise event.')}`;

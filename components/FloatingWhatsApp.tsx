@@ -2,28 +2,43 @@
 
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, X } from 'lucide-react';
+import { getStoredSettings, subscribeToStorageUpdates } from '@/lib/clientStorage';
 
 export default function FloatingWhatsApp() {
   const [whatsappNumber, setWhatsappNumber] = useState('917200212745');
   const [showBubble, setShowBubble] = useState(false);
 
   useEffect(() => {
-    // Fetch live WhatsApp number
+    // 1. Initial hydration from client storage
+    const stored = getStoredSettings({ whatsappNumber: '917200212745' } as any);
+    if (stored.whatsappNumber) setWhatsappNumber(stored.whatsappNumber);
+
+    // 2. Fetch live WhatsApp number
     fetch('/api/settings')
       .then((res) => res.json())
       .then((res) => {
         if (res.success && res.data?.whatsappNumber) {
-          setWhatsappNumber(res.data.whatsappNumber);
+          const fresh = getStoredSettings(res.data);
+          if (fresh.whatsappNumber) setWhatsappNumber(fresh.whatsappNumber);
         }
       })
       .catch(() => {});
+
+    // 3. Listen for live updates from admin
+    const unsubscribe = subscribeToStorageUpdates(() => {
+      const updated = getStoredSettings({ whatsappNumber: '917200212745' } as any);
+      if (updated.whatsappNumber) setWhatsappNumber(updated.whatsappNumber);
+    });
 
     // Show tooltip bubble after 3 seconds
     const timer = setTimeout(() => {
       setShowBubble(true);
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
   }, []);
 
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(

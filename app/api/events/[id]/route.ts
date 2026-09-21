@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getEventById, saveEvent, deleteEvent, EventItem } from '@/lib/storage';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -16,9 +19,9 @@ export async function GET(
   }
 }
 
-export async function PUT(
+async function handleEventUpdate(
   request: Request,
-  { params }: { params: { id: string } }
+  params: { id: string }
 ) {
   try {
     const existing = getEventById(params.id);
@@ -38,6 +41,20 @@ export async function PUT(
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  return handleEventUpdate(request, params);
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  return handleEventUpdate(request, params);
 }
 
 export async function DELETE(
